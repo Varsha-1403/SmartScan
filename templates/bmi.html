@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Scan - Calculate BMI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    /* Your existing CSS remains unchanged */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: 
+      flex;
+    }
+    .sidebar {
+      width: 250px;
+      height: 100vh;
+      background-color: #2c3e50;
+      color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 20px;
+      overflow-y: auto;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .nav-btn {
+      width: 90%;
+      padding: 12px;
+      margin: 5px 0;
+      background-color: #34495e;
+      color: white;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      font-size: 16px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease-in-out;
+    }
+    /* Add this to your existing CSS */
+.main-content {
+  overflow-y: auto; /* Enable vertical scrolling */
+  height: 100vh; /* Full viewport height */
+  padding: 20px; /* Add some padding */
+}
+    .nav-btn:hover {
+      background-color: #1abc9c;
+    }
+    .main-content {
+      flex-grow: 1;
+      margin-left: 250px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+    .bmi-container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+    h2 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease-in-out;
+    }
+    .btn:hover {
+      background-color: #2980b9;
+    }
+    .form-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    #result {
+      margin-top: 20px;
+      text-align: left;
+    }
+    .recommendations {
+      margin-top: 20px;
+      text-align: left;
+    }
+    .recommendations h3 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+    .recommendations ul {
+      list-style-type: disc;
+      padding-left: 20px;
+    }
+    .recommendations ul li {
+      margin-bottom: 10px;
+    }
+    .scroll-container {
+  overflow-y: auto; /* Enables both up and down scrolling */
+  height: 100vh; /* Ensure it takes full height */
+  scroll-behavior: smooth; /* Optional: smooth scrolling */
+}
+
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <h1 class="logo">Smart Scan</h1>
+    <nav>
+      <button class="nav-btn" onclick="loadDashboard()">Dashboard</button>
+      <button class="nav-btn" onclick="loadProfile()">Profile</button>
+      <button class="nav-btn active">Calculate BMI</button>
+      <button class="nav-btn" onclick="showHealthStatus()">Health Status</button>
+      <button class="nav-btn" onclick="showNutritionLevels()">Nutrition Levels</button>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <div class="bmi-container">
+      <h2>Calculate Your BMI</h2>
+
+      <div class="form-group">
+        <label for="weight">Weight (kg):</label>
+        <input type="number" id="weight" placeholder="Enter weight">
+      </div>
+
+      <div class="form-group">
+        <label for="height">Height (cm):</label>
+        <input type="number" id="height" placeholder="Enter height in cm">
+      </div>
+      
+      <div class="form-group">
+        <label for="gender">Gender:</label>
+        <select id="gender">
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="age">Age:</label>
+        <input type="number" id="age" placeholder="Enter Age">
+      </div>
+
+      <div class="form-group">
+        <label for="activity">Activity Level:</label>
+        <select id="activity">
+          <option value="sedentary">Sedentary (Little or no exercise)</option>
+          <option value="moderate">Moderate (Exercise 3-5 days per week)</option>
+          <option value="active">Active (Gym-goer, Athlete)</option>
+        </select>
+      </div>
+
+      <button onclick="calculateBMI()" class="btn">Calculate BMI</button>
+      <div id="result"></div>
+      <div class="recommendations" id="recommendations"></div>
+    </div>
+  </div>
+
+  <script>
+    async function calculateBMI() {
+  const height = parseFloat(document.getElementById("height").value) / 100;
+  const weight = parseFloat(document.getElementById("weight").value);
+  const age = parseInt(document.getElementById("age").value);
+  const gender = document.getElementById("gender").value;
+  const activity = document.getElementById("activity").value;
+  const userId = localStorage.getItem("userId");
+
+  if (height <= 0 || weight <= 0 || age <= 0) {
+    alert("Please enter valid inputs!");
+    return;
+  }
+  if (!userId) {
+    alert("User ID not found! Please log in.");
+    return;
+  }
+
+  // BMI Calculation
+  const bmi = (weight / (height * height)).toFixed(2);
+  let category = bmi < 18.5 ? "Underweight" : bmi < 24.9 ? "Normal weight" : bmi < 29.9 ? "Overweight" : "Obese";
+
+  // Redirect older adults to the new page
+  if (age >= 50) {
+    window.location.href = "/older-adults"; // Redirect to the new page
+    return; // Stop further execution
+  }
+
+  // Body Fat Percentage Calculation (Deurenberg formula)
+  let bfp = gender === "male" ? (1.20 * bmi) + (0.23 * age) - 16.2 : (1.20 * bmi) + (0.23 * age) - 5.4;
+  if (activity === "active") bfp -= 2;
+  if (activity === "sedentary") bfp += 2;
+  let fatCategory = bfp < 6 ? "Low Fat" : bfp < 24 ? "Normal Fat" : "High Fat";
+
+  // Daily Caloric Needs (Harris-Benedict Equation)
+  let bmr = gender === "male" ? 88.362 + (13.397 * weight) + (4.799 * height * 100) - (5.677 * age) : 447.593 + (9.247 * weight) + (3.098 * height * 100) - (4.330 * age);
+  let tdee = activity === "sedentary" ? bmr * 1.2 : activity === "moderate" ? bmr * 1.55 : bmr * 1.9;
+
+  // Macronutrient Breakdown (Standard Ratios)
+  const protein = (tdee * 0.3 / 4).toFixed(2); // 30% of calories from protein
+  const carbs = (tdee * 0.5 / 4).toFixed(2);  // 50% of calories from carbs
+  const fats = (tdee * 0.2 / 9).toFixed(2);   // 20% of calories from fats
+
+  // Display Results
+  document.getElementById("result").innerHTML = `
+    <h3>Your BMI Results</h3>
+    <p>Your BMI is <strong>${bmi}</strong> (${category}).</p>
+    <p>Estimated Body Fat Percentage: <strong>${bfp.toFixed(2)}%</strong> (${fatCategory}).</p>
+    <p>Daily Caloric Needs: <strong>${tdee.toFixed(2)} kcal</strong></p>
+    <p>Macronutrient Breakdown:</p>
+    <ul>
+      <li>Protein: <strong>${protein}g</strong></li>
+      <li>Carbs: <strong>${carbs}g</strong></li>
+      <li>Fats: <strong>${fats}g</strong></li>
+    </ul>
+  `;
+
+  // Fitness Recommendations
+  let recommendations = "";
+  if (category === "Underweight") {
+    recommendations = `
+      <h3>Fitness Recommendations</h3>
+      <ul>
+        <li>Focus on strength training to build muscle mass.</li>
+        <li>Increase caloric intake with nutrient-dense foods.</li>
+        <li>Consult a nutritionist for a personalized diet plan.</li>
+      </ul>
+    `;
+  } else if (category === "Overweight" || category === "Obese") {
+    recommendations = `
+      <h3>Fitness Recommendations</h3>
+      <ul>
+        <li>Incorporate cardio exercises like walking, jogging, or cycling.</li>
+        <li>Follow a balanced diet with a caloric deficit.</li>
+        <li>Consider consulting a fitness trainer for a structured plan.</li>
+      </ul>
+    `;
+  } else {
+    recommendations = `
+      <h3>Fitness Recommendations</h3>
+      <ul>
+        <li>Maintain a balanced diet and regular exercise routine.</li>
+        <li>Include strength training and cardio for overall fitness.</li>
+        <li>Stay hydrated and get adequate sleep.</li>
+      </ul>
+    `;
+  }
+
+  document.getElementById("recommendations").innerHTML = recommendations;
+
+  // Save Data to Backend
+  try {
+    await fetch("/save_bmi", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId, weight, height: height * 100, age, gender, activity, bmi, category, bfp, fatCategory, tdee
+      })
+    });
+    console.log("BMI data saved successfully!");
+  } catch (error) {
+    console.error("Error while saving BMI data:", error);
+  }
+}
+
+    function loadDashboard() { window.location.href = "/dashboard"; }
+    function loadProfile() { window.location.href = "/profile"; }
+    function showHealthStatus() { window.location.href = "/health"; }
+    function showNutritionLevels() { window.location.href = "/nutrition"; }
+  </script>
+</body>
+</html>

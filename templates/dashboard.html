@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Scan - Dashboard</title>
+  
+  <!-- External Libraries -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
+
+  <style>
+    /* Your existing CSS styles */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+    }
+    .sidebar {
+      width: 250px;
+      height: 100vh;
+      background-color: #2c3e50;
+      color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 20px;
+      overflow-y: auto;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .nav-btn {
+      width: 90%;
+      padding: 12px;
+      margin: 5px 0;
+      background-color: #34495e;
+      color: white;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      font-size: 16px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease-in-out;
+    }
+    .nav-btn:hover {
+      background-color: #1abc9c;
+    }
+    .main-content {
+      flex-grow: 1;
+      margin-left: 250px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+    #scanner-section {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+    h2 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease-in-out;
+    }
+    .btn:hover {
+      background-color: #2980b9;
+    }
+    .input-field {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 2px dashed #3498db;
+      background-color: #ecf0f1;
+      text-align: center;
+      cursor: pointer;
+    }
+    .preview-image {
+      width: 100%;
+      margin-top: 10px;
+      display: none;
+      border-radius: 5px;
+    }
+    #product-info {
+      margin-top: 20px;
+      text-align: left;
+    }
+    .search-container {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    #search-bar {
+      flex-grow: 1;
+      padding: 10px;
+      border: 2px solid #3498db;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    #search-btn {
+      width: auto;
+      padding: 10px 20px;
+    }
+    .alternative-product {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .alternative-product img {
+      max-width: 100px;
+      border-radius: 5px;
+    }
+    .scroll-container {
+  overflow-y: auto; /* Enables both up and down scrolling */
+  height: 100vh; /* Ensure it takes full height */
+  scroll-behavior: smooth; /* Optional: smooth scrolling */
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h1 class="logo">Smart Scan</h1>
+    <nav>
+      <button class="nav-btn" onclick="navigateTo('dashboard')">Dashboard</button>
+      <button class="nav-btn" onclick="navigateTo('profile')">Profile</button>
+      <button class="nav-btn" onclick="navigateTo('bmi')">Calculate BMI</button>
+      <button class="nav-btn" onclick="navigateTo('health')">Health Status</button>
+      <button class="nav-btn" onclick="navigateTo('nutrition')">Nutrition Levels</button>
+    </nav>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <section id="scanner-section">
+      <h2>Scan Your Product</h2>
+      <!-- Search Bar -->
+      <div class="search-container">
+        <input type="text" id="search-bar" placeholder="Search for a food item..." class="input-field">
+        <button id="search-btn" class="btn">Search</button>
+      </div>
+      <div class="scanner-container">
+        <div id="scanner"></div>
+        <button id="start-scan-btn" class="btn">Start Scanning</button>
+        <label for="upload-image">Or upload a barcode image:</label>
+        <input type="file" id="upload-image" accept="image/*" class="input-field">
+        <img id="image-preview" class="preview-image" alt="Preview">
+        <button id="upload-btn" class="btn" style="display: none;">Upload</button>
+        <div id="product-info"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    // Navigation function
+    function navigateTo(page) {
+      window.location.href = `/${page}`;
+    }
+
+    // Function to save consumed food to localStorage
+    function saveConsumedFood(food) {
+      let consumedFoods = JSON.parse(localStorage.getItem("consumedFoods")) || [];
+      consumedFoods.push(food);
+      localStorage.setItem("consumedFoods", JSON.stringify(consumedFoods));
+    }
+
+    // Global function to send consumed food to the backend
+    async function consumeFood(foodName, calories, protein, carbs, image) {
+      console.log("Consume clicked");
+      const userId = localStorage.getItem("userId");
+      const consumedData = {
+        userId,
+        foodName,
+        calories,
+        protein,
+        carbs,
+        image,
+        timestamp: new Date().toISOString()
+      };
+      try {
+        const response = await fetch("/save_consumed_food", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(consumedData)
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert(`✅ You have consumed ${foodName}!`);
+          saveConsumedFood(consumedData); // Save to localStorage
+        } else {
+          alert(`❌ Failed to save consumed food: ${result.message}`);
+        }
+      } catch (error) {
+        console.error("Error saving consumed food:", error);
+        alert("❌ Error saving consumed food.");
+      }
+    }
+
+    // Scanner and file upload logic
+    document.getElementById("start-scan-btn").addEventListener("click", startScan);
+    document.getElementById("upload-image").addEventListener("change", handleFileSelect);
+    document.getElementById("upload-btn").addEventListener("click", uploadFileToBackend);
+    document.getElementById("search-btn").addEventListener("click", handleSearch);
+
+    function startScan() {
+      Quagga.init({
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: document.querySelector("#scanner"),
+          constraints: {
+            width: 640,
+            height: 480,
+            facingMode: "environment"
+          }
+        },
+        decoder: { readers: ["ean_reader"] },
+        locate: true
+      }, (err) => {
+        if (err) {
+          console.error("Scanner Initialization Error:", err);
+          return;
+        }
+        Quagga.start();
+      });
+
+      Quagga.onDetected((data) => {
+        const barcode = data.codeResult.code;
+        console.log("Scanned Barcode:", barcode);
+        Quagga.stop();
+        fetchProductInfo(barcode);
+      });
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        alert("Please select a file.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById("image-preview").src = e.target.result;
+        document.getElementById("image-preview").style.display = "block";
+        document.getElementById("upload-btn").style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function uploadFileToBackend() {
+      const fileInput = document.getElementById("upload-image");
+      const file = fileInput.files[0];
+      if (!file) {
+        alert("Please select a file to upload.");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("barcode_image", file);
+      try {
+        const response = await fetch("/upload_barcode", {
+          method: "POST",
+          body: formData
+        });
+        const data = await response.json();
+        console.log(data.barcodes[0].data);
+        fetchProductInfo(data.barcodes[0].data);
+      } catch (error) {
+        console.error("Upload Error:", error);
+        alert("Failed to upload the file.");
+      }
+    }
+
+    async function handleSearch() {
+      const searchQuery = document.getElementById("search-bar").value.trim();
+      if (!searchQuery) {
+        alert("Please enter a food item to search.");
+        return;
+      }
+
+      try {
+        // Fetch product information from Open Food Facts API
+        const response = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(searchQuery)}&search_simple=1&action=process&json=1`);
+        const data = await response.json();
+
+        if (data.products && data.products.length > 0) {
+          const product = data.products[0]; // Get the first product from the search results
+          const barcode = product.code;
+
+          // Fetch detailed product information using the barcode
+          fetchProductInfo(barcode);
+        } else {
+          document.getElementById("product-info").innerHTML = `<p style="color:red;">No products found for "${searchQuery}".</p>`;
+        }
+      } catch (error) {
+        console.error("Search Error:", error);
+        document.getElementById("product-info").innerHTML = `<p style="color:red;">Failed to fetch product details.</p>`;
+      }
+    }
+
+    // Function to fetch product information and recommend alternatives
+    async function fetchProductInfo(barcode) {
+      const userId = localStorage.getItem("userId");
+      console.log("Fetching product info for barcode:", barcode);
+      try {
+        const response = await fetch("/process_food", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ barcode, quantity: 1, userId: userId })
+        });
+        const data = await response.json();
+        console.log("API Response:", data);
+        if (data.error) {
+          document.getElementById("product-info").innerHTML = `<p style="color:red;">${data.error}</p>`;
+          return;
+        }
+
+        // Extract food details
+        const foodInfo = data.food_info;
+        const warnings = data.warnings.join("<br>") || "✅ No warnings.";
+
+        // Determine health status based on BMI and nutritional content
+        const healthStatus = determineHealthStatus(data.bmi, foodInfo);
+
+        // Buttons for actions
+        let actionButtons = "";
+        actionButtons += `<button class="btn" onclick="consumeFood('${foodInfo.name.replace(/'/g, "\\'")}', ${foodInfo.calories}, ${foodInfo.protein}, ${foodInfo.carbs}, '${foodInfo.image}')">✅ Consume</button>`;
+        actionButtons += `<button class="btn" onclick="saveForLater('${foodInfo.name}')">💾 Save for Later</button>`;
+        actionButtons += `<button class="btn" onclick="findAlternatives('${foodInfo.name.replace(/'/g, "\\'")}', ${data.bmi})">🔍 Find Alternatives</button>`;
+
+        // Display product details
+        document.getElementById("product-info").innerHTML = `
+          <h3>Product: ${foodInfo.name}</h3>
+          <img src="${foodInfo.image}" alt="Product Image" style="max-width: 100%; border-radius: 5px; margin-top: 10px;">
+          <p><strong>Ingredients:</strong> ${foodInfo.ingredients}</p>
+          <h4>Nutritional Information (per quantity selected)</h4>
+          <p><strong>Calories:</strong> ${foodInfo.calories} kcal</p>
+          <p><strong>Protein:</strong> ${foodInfo.protein} g</p>
+          <p><strong>Carbs:</strong> ${foodInfo.carbs} g</p>
+          <h4>Health Status</h4>
+          <p style="color: ${healthStatus.color}; font-weight: bold;">
+            ${healthStatus.message}
+          </p>
+          <h4>Warnings</h4>
+          <p>${warnings}</p>
+          <div style="margin-top: 20px;">
+            ${actionButtons}
+          </div>
+        `;
+
+        // If the food is not suitable for the user's BMI, recommend alternatives
+        if (healthStatus.color === "red" || healthStatus.color === "orange") {
+          await findAlternatives(foodInfo.name, data.bmi);
+        }
+      } catch (error) {
+        console.error("API Request Error:", error);
+        document.getElementById("product-info").innerHTML = `<p style="color:red;">Failed to fetch product details.</p>`;
+      }
+    }
+
+    // Function to determine health status based on BMI and nutritional content
+    function determineHealthStatus(bmi, foodInfo) {
+      let message = "✅ You can consume this without any doubt.";
+      let color = "green";
+
+      if (bmi >= 25 && foodInfo.calories > 300) {
+        message = "❌ This product is high in calories. Consume in moderation.";
+        color = "red";
+      } else if (bmi < 18.5 && foodInfo.protein < 10) {
+        message = "❌ This product is low in protein. Consider a healthier alternative.";
+        color = "red";
+      } else if (foodInfo.carbs > 50) {
+        message = "⚠️ This product is high in carbs. Consume in moderation.";
+        color = "orange";
+      }
+
+      return { message, color };
+    }
+
+    // Function to save consumed food to localStorage
+    function saveConsumedFood(food) {
+      let consumedFoods = JSON.parse(localStorage.getItem("consumedFoods")) || [];
+      consumedFoods.push(food);
+      localStorage.setItem("consumedFoods", JSON.stringify(consumedFoods));
+    }
+
+    // Global function to send consumed food to the backend
+    async function consumeFood(foodName, calories, protein, carbs, image) {
+      console.log("Consume clicked");
+      const userId = localStorage.getItem("userId");
+      const consumedData = {
+        userId,
+        foodName,
+        calories,
+        protein,
+        carbs,
+        image,
+        timestamp: new Date().toISOString()
+      };
+      try {
+        const response = await fetch("/save_consumed_food", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(consumedData)
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert(`✅ You have consumed ${foodName}!`);
+          saveConsumedFood(consumedData); // Save to localStorage
+          updateNutritionPage(consumedData); // Update the Nutrition Page
+        } else {
+          alert(`❌ Failed to save consumed food: ${result.message}`);
+        }
+      } catch (error) {
+        console.error("Error saving consumed food:", error);
+        alert("❌ Error saving consumed food.");
+      }
+    }
+
+    // Function to update the Nutrition Page
+    function updateNutritionPage(consumedData) {
+      // Fetch the current nutrition data from localStorage or backend
+      let nutritionData = JSON.parse(localStorage.getItem("nutritionData")) || { totalCalories: 0, totalProtein: 0, totalCarbs: 0 };
+
+      // Update the nutrition data
+      nutritionData.totalCalories += consumedData.calories;
+      nutritionData.totalProtein += consumedData.protein;
+      nutritionData.totalCarbs += consumedData.carbs;
+
+      // Save the updated nutrition data
+      localStorage.setItem("nutritionData", JSON.stringify(nutritionData));
+
+      // Optionally, you can trigger a UI update on the Nutrition Page
+      console.log("Nutrition data updated:", nutritionData);
+    }
+
+    // Function to find healthier alternatives
+    async function findAlternatives(foodName, bmi, page = 1, retryCount = 0) {
+      const MAX_RETRIES = 2;
+      const SUGAR_LIMIT = 20;
+      const FIBER_MIN = 1;
+      const PAGE_SIZE = 24; // Open Food Facts API returns 24 products per page by default
+
+      try {
+        const apiUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(foodName)}&search_simple=1&action=process&json=1&page=${page}`;
+
+        console.log("Fetching alternatives from:", apiUrl);
+
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+        const data = await response.json();
+        console.log("API Response:", data);
+
+        if (!data.products || data.products.length === 0) {
+          if (retryCount < MAX_RETRIES) {
+            return findAlternatives(foodName.split(" ")[0], bmi, page, retryCount + 1);
+          } else {
+            document.getElementById("product-info").innerHTML += `<p style="color:red;">No alternatives found for "${foodName}".</p>`;
+            return;
+          }
+        }
+
+        // Log all products before filtering
+        console.log("All Products:", data.products);
+
+        // Filter out the original product and apply flexible filtering
+        let filteredProducts = data.products.filter(product => {
+          if (!product.product_name || !product.nutriments) return false;
+
+          const isNotOriginal = !product.product_name.toLowerCase().includes(foodName.toLowerCase());
+          const sugar = product.nutriments.sugars_100g ?? Infinity;
+          const fiber = product.nutriments.fiber_100g ?? 0;
+
+          return isNotOriginal && sugar < SUGAR_LIMIT && fiber > FIBER_MIN;
+        });
+
+        console.log("Filtered Alternatives:", filteredProducts);
+
+        if (filteredProducts.length === 0) {
+          if (retryCount < MAX_RETRIES) {
+            return findAlternatives(foodName.split(" ")[0], bmi, page, retryCount + 1);
+          } else {
+            document.getElementById("product-info").innerHTML += `<p style="color:red;">No healthier alternatives found for "${foodName}".</p>`;
+            return;
+          }
+        }
+
+        // Sort results based on BMI
+        const healthierAlternatives = filteredProducts
+          .sort((a, b) => {
+            const aCalories = a.nutriments.energy_kcal_100g || Infinity;
+            const bCalories = b.nutriments.energy_kcal_100g || Infinity;
+            const aSugar = a.nutriments.sugars_100g || Infinity;
+            const bSugar = b.nutriments.sugars_100g || Infinity;
+            const aProtein = a.nutriments.proteins_100g || 0;
+            const bProtein = b.nutriments.proteins_100g || 0;
+            const aFiber = a.nutriments.fiber_100g || 0;
+            const bFiber = b.nutriments.fiber_100g || 0;
+
+            if (bmi < 18.5) {
+              return bCalories - aCalories || bProtein - aProtein;
+            } else if (bmi >= 25) {
+              return aCalories - bCalories || aSugar - bSugar || bFiber - aFiber;
+            } else {
+              return bProtein - aProtein || bFiber - aFiber || aSugar - bSugar;
+            }
+          })
+          .slice(0, 3);
+
+        let alternativesHTML = `<h3>Recommended Healthier Alternatives:</h3>`;
+        healthierAlternatives.forEach(product => {
+  const productName = product.product_name || "Unknown";
+  const calories = product.nutriments.energy_kcal_100g || 0;
+  const protein = product.nutriments.proteins_100g || 0;
+  const carbs = product.nutriments.carbohydrates_100g || 0;
+  const image = product.image_url || 'https://via.placeholder.com/100';
+
+  // Escape single quotes and other special characters
+  const escapedFoodName = productName.replace(/'/g, "\\'").replace(/"/g, '\\"');
+  const escapedImage = image.replace(/'/g, "\\'").replace(/"/g, '\\"');
+
+  alternativesHTML += `
+    <div class="alternative-product">
+      <h4>${productName}</h4>
+      <p><strong>Calories:</strong> ${calories} kcal/100g</p>
+      <p><strong>Protein:</strong> ${protein} g/100g</p>
+      <p><strong>Carbs:</strong> ${carbs} g/100g</p>
+      <img src="${image}" alt="Product Image" style="max-width: 100px; border-radius: 5px;">
+      <button class="btn" onclick="consumeFood('${escapedFoodName}', ${calories}, ${protein}, ${carbs}, '${escapedImage}')">✅ Consume</button>
+    </div>
+  `;
+});
+
+        document.getElementById("product-info").innerHTML += alternativesHTML;
+
+        // If fewer than 3 alternatives found, try the next page
+        if (healthierAlternatives.length < 3 && page < data.count / PAGE_SIZE) {
+          findAlternatives(foodName, bmi, page + 1, retryCount);
+        }
+      } catch (error) {
+        console.error("Error finding alternatives:", error);
+        document.getElementById("product-info").innerHTML += `<p style="color:red;">Failed to fetch alternatives. Please try again later.</p>`;
+      }
+    }
+
+    // Function to save for later
+    function saveForLater(foodName) {
+      console.log("Saving for later:", foodName);
+      // Your save-for-later logic here
+    }
+  </script>
+</body>
+</html>

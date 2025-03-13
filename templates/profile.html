@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Scan - Profile</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+    }
+    .sidebar {
+      width: 250px;
+      height: 100vh;
+      background-color: #2c3e50;
+      color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 20px;
+      overflow-y: auto;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .nav-btn {
+      width: 90%;
+      padding: 12px;
+      margin: 5px 0;
+      background-color: #34495e;
+      color: white;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      font-size: 16px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease-in-out;
+    }
+    .nav-btn:hover {
+      background-color: #1abc9c;
+    }
+    .main-content {
+      flex-grow: 1;
+      margin-left: 250px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+    #profile-section {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+    h2 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    .profile-info {
+      text-align: left;
+    }
+    .profile-info p {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .profile-info strong {
+      color: #2c3e50;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h1 class="logo">Smart Scan</h1>
+    <nav>
+      <button class="nav-btn" onclick="navigateTo('dashboard')">Dashboard</button>
+      <button class="nav-btn" onclick="navigateTo('profile')">Profile</button>
+      <button class="nav-btn" onclick="navigateTo('bmi')">Calculate BMI</button>
+      <button class="nav-btn" onclick="navigateTo('health')">Health Status</button>
+      <button class="nav-btn" onclick="navigateTo('nutrition')">Nutrition Levels</button>
+    </nav>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <section id="profile-section">
+      <h2>User Profile</h2>
+      <div class="profile-info">
+        <p><strong>Name:</strong> <span id="name">N/A</span></p>
+        <p><strong>Email:</strong> <span id="email">N/A</span></p>
+        <p><strong>Age:</strong> <span id="age">N/A</span></p>
+        <p><strong>Gender:</strong> <span id="gender">N/A</span></p>
+        <p><strong>Height:</strong> <span id="height">N/A</span> cm</p>
+        <p><strong>Weight:</strong> <span id="weight">N/A</span> kg</p>
+        <p><strong>BMI Category:</strong> <span id="category">N/A</span></p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function navigateTo(page) {
+      window.location.href = `/${page}`;
+    }
+
+    const userId = localStorage.getItem("userId");
+
+    document.addEventListener("DOMContentLoaded", () => {
+      fetch(`/profile-details/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+          console.log("Fetched Data:", data);
+
+          if (data.profile) {
+            document.getElementById("name").textContent = data.profile.username || "N/A";
+            document.getElementById("email").textContent = data.profile.email || "N/A";
+            document.getElementById("age").textContent = data.profile.age || "N/A";
+            document.getElementById("gender").textContent = data.profile.gender || "N/A";
+          } else {
+            alert("Error: " + data.error);
+          }
+
+          if (data.bmi) {
+            document.getElementById("age").textContent = data.bmi.age || "N/A";
+            document.getElementById("gender").textContent = data.bmi.gender || "N/A";
+            document.getElementById("height").textContent = data.bmi.height || "N/A";
+            document.getElementById("weight").textContent = data.bmi.weight || "N/A";
+            document.getElementById("category").textContent = data.bmi.category || "N/A";
+          }
+        })
+        .catch(error => console.error("Error fetching profile details:", error));
+    });
+  </script>
+</body>
+</html>

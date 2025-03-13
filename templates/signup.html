@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Scan - Sign Up</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body { display: flex; height: 100vh; background: #f4f4f4; position: relative; }
+
+    .left { 
+      background: linear-gradient(135deg, #2C3E50, #1A1A3D); 
+      color: white; 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center; 
+      align-items: center; 
+      padding: 40px; 
+      text-align: center;
+    }
+    
+    .right { flex: 1; display: flex; justify-content: center; align-items: center; background: white; }
+    .signup-box { width: 350px; text-align: center; background: white; padding: 20px; border-radius: 10px; }
+    .input-group { position: relative; width: 100%; margin-bottom: 15px; }
+    input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; outline: none; transition: border 0.3s; }
+    input:focus { border-color: #1A1A3D; }
+
+    /* Password Toggle Icon */
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Sign Up Button */
+    button { 
+      width: 100%; 
+      padding: 12px; 
+      background: #1A1A3D; 
+      color: white; 
+      border: none; 
+      border-radius: 5px; 
+      cursor: pointer; 
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    
+    button:hover { background: #2C3E50; }
+
+    /* Error Messages */
+    .error { color: red; font-size: 14px; margin-top: 5px; display: none; text-align: left; }
+    .success { color: green; font-size: 16px; margin-top: 10px; display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Left Side: Banner -->
+  <div class="left">
+    <h1>Hello User! 👋</h1>
+    <p>Sign up now and experience automated efficiency with <b>Smart Scan</b>!</p>
+  </div>
+
+  <!-- Right Side: Sign Up Form -->
+  <div class="right">
+    <div class="signup-box">
+      <h2>Create an Account</h2>
+      <p>Already have an account? <a href="/">Login</a></p>
+
+      <form id="signupForm">
+        <div class="input-group">
+          <input type="text" id="name" placeholder="Full Name">
+        </div>
+        <p class="error" id="nameError">Name must be at least 3 characters</p>
+
+        <div class="input-group">
+          <input type="email" id="email" placeholder="Email">
+        </div>
+        <p class="error" id="emailError">Please enter a valid email</p>
+
+        <div class="input-group">
+          <input type="password" id="password" placeholder="Password">
+          <img src="/static/images/eyeSlash.png" class="toggle-password" onclick="togglePassword('password', this)">
+        </div>
+        <p class="error" id="passwordError">Password must be at least 6 characters</p>
+
+        <div class="input-group">
+          <input type="password" id="confirmPassword" placeholder="Confirm Password">
+          <img src="/static/images/eyeSlash.png" class="toggle-password" onclick="togglePassword('confirmPassword', this)">
+        </div>
+        <p class="error" id="confirmPasswordError">Passwords do not match</p>
+
+        <button type="button" onclick="validateForm()">Sign Up</button>
+        <p class="success" id="successMessage">Sign Up successful! 🎉</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    function togglePassword(fieldId, icon) {
+      const field = document.getElementById(fieldId);
+      if (field.type === "password") {
+        field.type = "text";
+        icon.src = "static/images/eye.png"; // Show password
+      } else {
+        field.type = "password";
+        icon.src = "static/images/eyeSlash.png"; // Hide password
+      }
+    }
+
+    
+    async function validateForm() {
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const confirmPassword = document.getElementById("confirmPassword").value.trim();
+  console.log(name,email,password)
+  const errors = {
+    nameError: name.length < 3,
+    emailError: !email.match(/^[^ ]+@[^ ]+\.[a-z]{2,6}$/),
+    passwordError: password.length < 6,
+    confirmPasswordError: password !== confirmPassword
+  };
+
+  Object.keys(errors).forEach(id => {
+    document.getElementById(id).style.display = errors[id] ? "block" : "none";
+  });
+
+  if (!Object.values(errors).includes(true)) {
+    // Create an object with form data
+    
+    try {
+      // Send a POST request to the backend
+      const response = await fetch("/signup-creds", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({name,email,password})
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        document.getElementById("successMessage").textContent = "Signup successful! 🎉";
+        document.getElementById("successMessage").style.display = "block";
+        
+        // Redirect to another page after 2 seconds
+        setTimeout(() => window.location.href = "/health", 2000);
+      } else {
+        alert(result.message || "Signup failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred. Please try again later.");
+    }
+  } else {
+    document.getElementById("successMessage").style.display = "none";
+  }
+}
+     </script>
+
+</body>
+</html>

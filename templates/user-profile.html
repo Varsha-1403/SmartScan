@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile | Smart Scan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { display: flex; height: 100vh; }
+        
+        /* Left Section (Banner) */
+        .left { 
+            background: linear-gradient(135deg, #2C3E50, #1A1A3D); 
+            color: white; 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 40px; 
+            text-align: center;
+            position: relative;
+        }
+        
+        /* Smart Scan Logo */
+        .logo {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .left h1 { font-size: 32px; margin-top: 40px; }
+        .left p { margin-top: 10px; max-width: 320px; text-align: center; }
+
+        /* Right Section (Profile Form) */
+        .right { flex: 1; display: flex; justify-content: center; align-items: center; background: #F8F9FA; }
+        .profile-box { width: 350px; text-align: center; }
+        .profile-box h2 { margin-bottom: 10px; color: #2C3E50; }
+        .profile-box p { margin-bottom: 15px; color: #5D6D7E; }
+
+        /* Input Fields */
+        input, select { 
+            width: 100%; 
+            padding: 10px; 
+            margin: 8px 0; 
+            border: 1px solid #BDC3C7; 
+            border-radius: 5px; 
+            background: #ECF0F1;
+        }
+
+        /* Error Message */
+        .error { color: red; font-size: 12px; text-align: left; margin-top: -6px; margin-bottom: 10px; display: none; }
+
+        /* Next Button */
+        .next-btn { 
+            width: 100%; 
+            padding: 10px; 
+            background: #1A1A3D;
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin-top: 10px; 
+            font-size: 16px;
+        }
+        
+        .next-btn:hover { background: #141436; }
+    </style>
+</head>
+<body>
+    <!-- Left Side: Banner & Text -->
+    <div class="left">
+        <div class="logo">Smart Scan</div>
+        <h1>Complete Your Profile! 📋</h1>
+        <p>Fill in your details to personalize your <b>Smart Scan</b> experience and access your dashboard.</p>
+    </div>
+
+    <!-- Right Side: Profile Form -->
+    <div class="right">
+        <div class="profile-box">
+            <h2>User Profile</h2>
+            <p>Enter your details below</p>
+
+            <form id="profileForm">
+                <input type="text" id="name" placeholder="Full Name">
+                <div class="error" id="nameError">Please enter your full name.</div>
+
+                <input type="number" id="age" placeholder="Age">
+                <div class="error" id="ageError">Age must be between 10 and 100.</div>
+
+                <select id="gender">
+                    <option value="" disabled selected>Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+                <div class="error" id="genderError">Please select your gender.</div>
+
+                <input type="number" id="height" placeholder="Height (cm)">
+                <div class="error" id="heightError">Please enter a valid height.</div>
+
+                <input type="number" id="weight" placeholder="Weight (kg)">
+                <div class="error" id="weightError">Please enter a valid weight.</div>
+
+                <input type="tel" id="mobile" placeholder="Mobile Number">
+                <div class="error" id="mobileError">Enter a valid 10-digit mobile number.</div>
+
+                <button type="button" class="next-btn" onclick="validateForm()">Next</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript for Validation and Backend Integration -->
+    <script>
+        async function validateForm() {
+            let isValid = true;
+
+            // Get form elements
+            let name = document.getElementById("name").value.trim();
+            let age = document.getElementById("age").value.trim();
+            let gender = document.getElementById("gender").value;
+            let height = document.getElementById("height").value.trim();
+            let weight = document.getElementById("weight").value.trim();
+            let mobile = document.getElementById("mobile").value.trim();
+
+            // Error elements
+            let nameError = document.getElementById("nameError");
+            let ageError = document.getElementById("ageError");
+            let genderError = document.getElementById("genderError");
+            let heightError = document.getElementById("heightError");
+            let weightError = document.getElementById("weightError");
+            let mobileError = document.getElementById("mobileError");
+
+            // Reset errors
+            nameError.style.display = "none";
+            ageError.style.display = "none";
+            genderError.style.display = "none";
+            heightError.style.display = "none";
+            weightError.style.display = "none";
+            mobileError.style.display = "none";
+
+            // Name validation
+            if (name === "") {
+                nameError.style.display = "block";
+                isValid = false;
+            }
+
+            // Age validation (should be between 10 and 100)
+            if (age === "" || isNaN(age) || age < 10 || age > 100) {
+                ageError.style.display = "block";
+                isValid = false;
+            }
+
+            // Gender validation
+            if (gender === "") {
+                genderError.style.display = "block";
+                isValid = false;
+            }
+
+            // Height validation (should be a number between 50 and 250 cm)
+            if (height === "" || isNaN(height) || height < 50 || height > 250) {
+                heightError.style.display = "block";
+                isValid = false;
+            }
+
+            // Weight validation (should be a number between 20 and 200 kg)
+            if (weight === "" || isNaN(weight) || weight < 20 || weight > 200) {
+                weightError.style.display = "block";
+                isValid = false;
+            }
+
+            // Mobile number validation (should be exactly 10 digits)
+            let mobilePattern = /^[6-9]\d{9}$/;
+            if (!mobile.match(mobilePattern)) {
+                mobileError.style.display = "block";
+                isValid = false;
+            }
+
+            // If all validations pass, save data to MongoDB
+            if (isValid) {
+                try {
+                    const response = await fetch("/save-profile", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name, age, gender, height, weight, mobile })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        alert("Profile saved successfully! Redirecting to dashboard...");
+                        window.location.href = "dashboard.html"; // Redirect to dashboard
+                    } else {
+                        alert(data.message || "Failed to save profile. Please try again.");
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                    alert("An error occurred. Please try again.");
+                }
+            }
+        }
+    </script>
+</body>
+</html>

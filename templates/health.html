@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMI Gauge Chart</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background-color: #2c3e50;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            overflow-y: auto;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .nav-btn {
+            width: 90%;
+            padding: 12px;
+            margin: 5px 0;
+            background-color: #34495e;
+            color: white;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .nav-btn:hover {
+            background-color: #1abc9c;
+        }
+
+        .nav-btn.active {
+            background-color: #1abc9c;
+        }
+
+        /* Main content */
+        .main-content {
+            flex-grow: 1;
+            margin-left: 250px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            flex-direction: column;
+        }
+
+        .health-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 350px;
+            margin: auto;
+        }
+
+        .chart-container canvas {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Corrected Needle (Arrow) */
+        .needle {
+            position: absolute;
+            width: 0;
+            height: 0;
+            top: 40%;
+            left: 50%;
+            transform-origin: bottom center;
+            transition: transform 0.5s ease-in-out;
+            transform: translateX(-50%) rotate(0deg);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 100px solid black; /* Correct arrow direction */
+        }
+
+        /* BMI label */
+        #bmiLabel {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <h1 class="logo">Smart Scan</h1>
+        <nav>
+           
+      <button class="nav-btn" onclick="navigateTo('dashboard')">Dashboard</button>
+      <button class="nav-btn" onclick="navigateTo('profile')">Profile</button>
+      <button class="nav-btn" onclick="navigateTo('bmi')">Calculate BMI</button>
+      <button class="nav-btn" onclick="navigateTo('health')">Health Status</button>
+      <button class="nav-btn" onclick="navigateTo('nutrition')">Nutrition Levels</button>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="health-container">
+            <h2>BMI Health Status</h2>
+            <div class="chart-container">
+                <canvas id="bmiGaugeChart"></canvas>
+                <div class="needle" id="needle"></div>  <!-- Needle Arrow -->
+            </div>
+            <p id="bmiLabel"></p>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function navigateTo(page) {
+      window.location.href = `/${page}`;
+    }
+        const userId = localStorage.getItem("userId");
+
+        // Function to fetch BMI data from API
+        async function fetchBMI() {
+            try {
+                const response = await fetch(`/get_bmi_data_only/${userId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log(data) // Assuming API returns JSON
+                return data.bmi; // Adjust based on API response format
+            } catch (error) {
+                console.error("Error fetching BMI data:", error);
+                return null;
+            }
+        }
+
+        // BMI categories and colors
+        const bmiRanges = [16, 18.5, 25, 30, 40];
+        const bmiColors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#27ae60'];
+
+        function getBMIStatus(bmi) {
+            if (bmi < 16) return "Very Poor";
+            if (bmi < 18.5) return "Poor";
+            if (bmi < 25) return "Fair";
+            if (bmi < 30) return "Good";
+            return "Excellent";
+        }
+
+        async function createGaugeChart() {
+            const bmi = await fetchBMI();
+            if (bmi === null) {
+                document.getElementById("bmiLabel").innerHTML = `Error fetching BMI data`;
+                return;
+            }
+
+            const ctx = document.getElementById('bmiGaugeChart').getContext('2d');
+
+            // Create Gauge Chart
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ["Very Poor", "Poor", "Fair", "Good", "Excellent"],
+                    datasets: [{
+                        data: bmiRanges,
+                        backgroundColor: bmiColors,
+                        borderWidth: 1,
+                        cutout: '70%',
+                        rotation: 270,
+                        circumference: 180
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Update the needle position
+            positionNeedle(bmi);
+            document.getElementById("bmiLabel").innerHTML = `Your BMI: ${bmi} (${getBMIStatus(bmi)})`;
+        }
+
+        function positionNeedle(bmi) {
+            const needle = document.getElementById("needle");
+
+            const minBMI = 10;
+            const maxBMI = 40;
+
+            // Map BMI to gauge angle (-90° to +90°)
+            let angle = ((bmi - minBMI) / (maxBMI - minBMI)) * 180 - 90;
+            angle = Math.max(-90, Math.min(90, angle));
+
+            // Rotate the needle
+            needle.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+        }
+
+        // Load chart on page load
+        window.onload = createGaugeChart;
+
+        
+    </script>
+
+</body>
+</html>

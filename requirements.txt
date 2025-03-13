@@ -1,0 +1,8 @@
+Flask
+pymongo
+werkzeug
+requests
+python-dotenv
+pyjwt
+pillow
+pyzbar

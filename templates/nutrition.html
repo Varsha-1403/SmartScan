@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nutrition Levels</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            overflow-y: auto;
+        }
+
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background-color: #2c3e50;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            overflow-y: auto;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .nav-btn {
+            width: 90%;
+            padding: 12px;
+            margin: 5px 0;
+            background-color: #34495e;
+            color: white;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .nav-btn.active {
+            background-color: #253544;
+        }
+
+        .nav-btn:hover {
+            background-color: #1abc9c;
+        }
+        .main-content {
+            flex-grow: 1;
+            margin-left: 250px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .nutrition-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: 400px !important;
+        }
+
+        #consumed-products {
+            margin-top: 20px;
+            text-align: left;
+            width: 100%;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .product-item {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+
+        .product-item img {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            margin-right: 20px;
+        }
+
+        .product-details h4 {
+            margin: 0;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .product-details p {
+            margin: 5px 0;
+            font-size: 16px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1 class="logo">Smart Scan</h1>
+        <nav>
+            <button class="nav-btn" onclick="loadDashboard()">Dashboard</button>
+            <button class="nav-btn" onclick="loadProfile()">Profile</button>
+            <button class="nav-btn" onclick="calculateBMI()">Calculate BMI</button>
+            <button class="nav-btn" onclick="showHealthStatus()">Health Status</button>
+            <button class="nav-btn active" onclick="showNutritionLevels()">Nutrition Levels</button>
+        </nav>
+    </div>
+
+    
+    <div class="main-content">
+        <div class="nutrition-container">
+            <h2>Nutrition Levels</h2>
+            <canvas id="nutritionChart"></canvas>
+            <div id="nutrition-result"></div>
+            <div id="consumed-products">
+                <h3>Consumed Products</h3>
+                <div id="product-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+       function loadNutritionChart() {
+  let consumedFoods = JSON.parse(localStorage.getItem("consumedFoods")) || [];
+
+  if (consumedFoods.length === 0) {
+    document.getElementById("nutrition-result").innerHTML = "<p>No nutrition data available.</p>";
+    return;
+  }
+
+  let totalCalories = 0, totalProtein = 0, totalCarbs = 0;
+  let productList = document.getElementById("product-list");
+  productList.innerHTML = "";
+
+  consumedFoods.forEach(food => {
+    totalCalories += food.calories || 0;
+    totalProtein += food.protein || 0;
+    totalCarbs += food.carbs || 0;
+
+    let productItem = document.createElement("div");
+    productItem.className = "product-item";
+
+    productItem.innerHTML = `
+      <img src="${food.image || 'placeholder.jpg'}" alt="${food.foodName || 'Unknown'}">
+      <div class="product-details">
+        <h4>${food.foodName || 'Unknown'}</h4>
+        <p><strong>Calories:</strong> ${(food.calories || 0).toFixed(2)} kcal</p>
+        <p><strong>Protein:</strong> ${(food.protein || 0).toFixed(2)} g</p>
+        <p><strong>Carbs:</strong> ${(food.carbs || 0).toFixed(2)} g</p>
+      </div>
+    `;
+
+    productList.appendChild(productItem);
+  });
+
+  const ctx = document.getElementById('nutritionChart').getContext('2d');
+  if (window.myChart) {
+    window.myChart.destroy();
+  }
+
+  window.myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Protein (g)', 'Carbohydrates (g)', 'Calories (kcal)'],
+      datasets: [{
+        label: 'Nutrition Levels',
+        data: [totalProtein, totalCarbs, totalCalories],
+        backgroundColor: ['#3498db', '#1abc9c', '#e74c3c'],
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          ticks: {
+            font: {
+              size: 16
+            }
+          }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            font: {
+              size: 16
+            }
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          labels: {
+            font: {
+              size: 16
+            }
+          }
+        }
+      }
+    }
+  });
+}
+        window.onload = loadNutritionChart;
+        function loadDashboard() { window.location.href = "/dashboard"; }
+        function loadProfile() { window.location.href = "/profile"; }
+        function showHealthStatus() { window.location.href = "/health"; }
+        function showNutritionLevels() { window.location.href = "/nutrition"; }
+        function calculateBMI() { window.location.href = "/bmi"; }
+
+    </script>
+</body>
+</html>
